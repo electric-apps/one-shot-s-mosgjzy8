@@ -4,9 +4,9 @@
  *
  * Supports both local Electric (Docker) and Electric Cloud.
  * For Electric Cloud, set these environment variables:
- *   ELECTRIC_URL=https://api.electric-sql.cloud
+ *   ELECTRIC_URL=https://api.electric-sql.cloud  (auto-detected when SOURCE_ID is set)
  *   ELECTRIC_SOURCE_ID=<your-source-id>
- *   ELECTRIC_SECRET=<your-secret>
+ *   ELECTRIC_SOURCE_SECRET=<your-secret>  (also accepts ELECTRIC_SECRET)
  *
  * ⚠️ On the CLIENT side (when constructing `ShapeStream({ url: ... })`
  * or similar), the URL passed to the client library MUST be absolute.
@@ -51,7 +51,12 @@ const HOP_BY_HOP = new Set([
 ])
 
 export function prepareElectricUrl(request: Request, tableName: string): string {
-	const electricUrl = process.env.ELECTRIC_URL || "http://localhost:3000"
+	const sourceId = process.env.ELECTRIC_SOURCE_ID
+	const secret = process.env.ELECTRIC_SOURCE_SECRET || process.env.ELECTRIC_SECRET
+	// When cloud credentials are present, default to Electric Cloud rather than localhost.
+	const electricUrl =
+		process.env.ELECTRIC_URL ||
+		(sourceId ? "https://api.electric-sql.cloud" : "http://localhost:3000")
 	const url = new URL(`${electricUrl}/v1/shape`)
 
 	// Forward Electric-specific query parameters
@@ -64,9 +69,9 @@ export function prepareElectricUrl(request: Request, tableName: string): string 
 	url.searchParams.set("table", tableName)
 
 	// Add Electric Cloud auth if configured (server-side only, never exposed to browser)
-	if (process.env.ELECTRIC_SOURCE_ID && process.env.ELECTRIC_SECRET) {
-		url.searchParams.set("source_id", process.env.ELECTRIC_SOURCE_ID)
-		url.searchParams.set("secret", process.env.ELECTRIC_SECRET)
+	if (sourceId && secret) {
+		url.searchParams.set("source_id", sourceId)
+		url.searchParams.set("secret", secret)
 	}
 
 	return url.toString()
