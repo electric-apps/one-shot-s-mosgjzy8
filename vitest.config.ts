@@ -3,5 +3,5 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
 	resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
-	test: { globals: true, environment: "node" },
+	test: { globals: true, environment: "node", exclude: ["**/.one-shot/**", "**/node_modules/**"] },
 })
